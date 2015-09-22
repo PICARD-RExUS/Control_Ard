@@ -33,17 +33,16 @@ byte h;
 byte k;
 byte t;
 byte u;
-byte x;
 byte y;
 byte z;
 
-//Global variables
+int p = 0;
+int q = 0;
+int r = 0;
+int s = 0;
+int x = 0;
 
-boolean stringComplete = false; // whether the string is complete
-
-//Strings for groundstation
-
-String inputString = "";         //a string to hold incoming data
+String inputString = "";         // a string to hold incoming data
 
 void setup() { 
 
@@ -54,10 +53,8 @@ void setup() {
   pinMode(4, OUTPUT); //Set Pin 4 - Cameras Trigger - as output
   pinMode(5, INPUT);  //Set Pin 5 - Lift off Signal - as input
   pinMode(6, OUTPUT); //Set Pin 6 - Dataloggers Trigger - as output
- // pinMode(7, INPUT);  //Set Pin 7 - rtc scl - as input
- // pinMode(8, INPUT);  //Set Pin 8 - rtc soa - as input
 
-  rtc.begin(DateTime()); //start RTC
+ // rtc.begin(DateTime()); //start RTC
     
   digitalWrite(4, HIGH); //turn cameras on
   delay(5000);
@@ -66,6 +63,9 @@ void setup() {
   inputString.reserve(200); } // reserve 200 bytes for the inputString
 
 void loop() {
+
+if ( x < 4 ) {
+  //does this work as a Latch???
   //majority voting for LO detection
     a = digitalRead(5);
     delay(10);
@@ -81,48 +81,55 @@ void loop() {
     delay(10);
     g = digitalRead(5);
     delay(10); 
-        
-    x = a + b + c + d + e + f + g; //majority passes high LO signal when x > 3
-
-//LATCH???
+  
+x = a + b + c + d + e + f + g; }   //majority passes high LO signal when x > 3
     
-    y = EEPROM.read(address);     //read eeprom
+y = EEPROM.read(address);          //read eeprom
 
-if ( x > 3 && y < 1 ) {           //LO = high? & eeprom data = 0?
-  DateTime now = rtc.now();       //if true, read rtc
-  val = now.unixtime();           //rtc time = val
-  EEPROM.write(address, val);}    //write val to eeprom  
+if ( x > 3 && y < 1 ) {            //LO = high? & eeprom data = 0?
+  DateTime now = rtc.now();        //if true, read rtc
+  val = now.unixtime();            //rtc time = val
+  EEPROM.write(address, val);}     //write val to eeprom  
 
-else if ( x > 3 && y > 0 ) {      //LO = high? & eeprom data > 0?
-  DateTime now = rtc.now();       //read rtc
-  z = now.unixtime();             //rtc time  = z
-  t = (z - y);                    //time elapsed is t, difference between z and y
+else if ( x > 3 && y > 0 ) {       //LO = high? & eeprom data > 0?
+  DateTime now = rtc.now();        //read rtc
+  z = now.unixtime();              //rtc time  = z
+  t = (z - y);                     //time elapsed is t, difference between z and y
 
- switch (t) {  
-  case 10:
-   digitalWrite(4, HIGH);
-   delay(100);
-   digitalWrite(4, LOW);
-   break;
-  case 20:
-   digitalWrite(6, HIGH); 
-   break; 
-  case 30:
-   digitalWrite(3, HIGH); 
-   break;
-  case 40:
-   digitalWrite(2, HIGH); 
-   break; 
-  case 50:
-   digitalWrite(3, LOW); 
-   digitalWrite(2, LOW);
-   digitalWrite(6, LOW);
-   break;
-  case 60:
-   digitalWrite(4, HIGH);
-   delay(100);
-   digitalWrite(4, LOW);
-   break; }}
+  if ( t > 10 && p < 1 ) {         //record with cameras
+     digitalWrite(4, HIGH);
+     delay(100);
+     digitalWrite(4, LOW);
+     p = 1; }
+     
+  if ( t > 20 && q < 1 ){          //turn on data loggers
+     digitalWrite(6, HIGH);
+     q = 1; }
+
+  if ( t > 30 && r < 1 ) {         //turn on deployment signal
+     digitalWrite(3, HIGH);
+     r = 1; }
+     
+  if ( t > 40 && s < 1 ) {         //turn on LAFORGE
+     digitalWrite(2, HIGH);
+     s = 1; }
+
+  if ( t > 50 ) {                  //turn off deployment signal
+     digitalWrite(3,LOW); }
+
+  if ( t > 60 ) {                  //turn off LAFORGE
+     digitalWrite(2,LOW); }
+     
+  if ( t > 70 ) {                  //turn off data loggers
+     digitalWrite(6,LOW); }
+
+  if ( t > 80 && p > 0 && p < 2 ) {//turn off cameras
+     digitalWrite(4,HIGH);
+     delay(5000);
+     digitalWrite(4,LOW); 
+     p = 2; }
+    
+}
 
   DateTime now = rtc.now();
   h = now.unixtime();
@@ -135,20 +142,20 @@ else if ( x > 3 && y > 0 ) {      //LO = high? & eeprom data > 0?
     inputString += "\n\r";
  
     String dataString = "";    //string for assembling the data to log  
-    for (int analogPin = 0; analogPin < 3; analogPin++) {   // read five sensors and append to the string
+    for (int analogPin = 0; analogPin < 4; analogPin++) {   // read five sensors and append to the string
       int sensor = analogRead(analogPin);
       dataString += String(sensor);
-      if (analogPin < 3) {
+      if (analogPin < 4) {
         dataString += ","; }}
 
     String alfaString = "";
-    for(int analogPin = 6; analogPin < 7; analogPin++) {
-      int sensor = analogRead(analogPin);
+    for(int analoguePin = 6; analoguePin < 8; analoguePin++) {
+      int sensor = analogRead(analoguePin);
       alfaString += String(sensor);
-      if (analogPin < 6) {
+      if (analoguePin < 7) {
         alfaString += ","; }}
 
-    dataString += alfaString + "-Data," + inputString + "-LAFORGE," + h + "-RTC Time," + k + "-EEPROM Time";
+    dataString += alfaString + "-Data," + inputString + "-LAFORGE," + h + "-RTC Time," + k + "-EEPROM Time"; //requires refinement
     Serial.println(dataString);
         
-    delay(1000); }    
+    delay(100); }    //requires refinement
