@@ -36,10 +36,19 @@ byte u;
 byte y;
 byte z;
 
+//byte aa;
+//byte ab;
+//byte ac;
+//byte ad;
+//byte ae;
+//byte af;
+//byte ag;
+
 int p = 0;
 int q = 0;
 int r = 0;
 int s = 0;
+//int w = 0;
 int x = 0;
 
 String inputString = "";         // a string to hold incoming data
@@ -62,27 +71,41 @@ void setup() {
              
   inputString.reserve(200); } // reserve 200 bytes for the inputString
 
+void(* resetFunc) (void) = 0; //declare reset function @ address 0
+
 void loop() {
 
 if ( x < 4 ) {
   //does this work as a Latch???
-  //majority voting for LO detection
+  //majority voting for LO //& SOE// detection
     a = digitalRead(5);
+//    aa = digitalRead(7);
     delay(10);
     b = digitalRead(5);
+//    ab = digitalRead(7);
     delay(10);    
     c = digitalRead(5);
+//    ac = digitalRead(7);
     delay(10);
     d = digitalRead(5);
+//    ad = digitalRead(7);
     delay(10);
     e = digitalRead(5);
+//    ae = digitalRead(7);
     delay(10);  
     f = digitalRead(5);
+//    af = digitalRead(7);
     delay(10);
     g = digitalRead(5);
+//    ag = digitalRead(7);
     delay(10); 
+
+w = aa + ab + ac + ad + ae + af + ag;
   
 x = a + b + c + d + e + f + g; }   //majority passes high LO signal when x > 3
+
+//if ( w > 3 ) {
+//  resetFunc(); } //call reset 
     
 y = EEPROM.read(address);          //read eeprom
 
